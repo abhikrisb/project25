@@ -1,10 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { FaFolder, FaDownload } from 'react-icons/fa';
 
-const NotesViewer = ({ user }) => {
-  const [notes, setNotes] = useState([]);
-  const [selectedSubject, setSelectedSubject] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
+interface User {
+  department: string;
+  semester: string;
+}
+
+interface NoteFile {
+  filename: string;
+  url: string;
+  size: number;
+  type?: string;
+  department?: string;
+  semester?: string;
+  subject?: string;
+  content?: string;
+  mimeType?: string;
+}
+
+interface Subject {
+  subject: string;
+  totalFiles: number;
+  notes: NoteFile[];
+}
+
+interface FileViewerProps {
+  file: NoteFile | null;
+}
+
+interface NotesViewerProps {
+  user: User | null;
+}
+
+const NotesViewer = ({ user }:NotesViewerProps) => {
+  const [notes, setNotes] = useState<Subject[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [selectedFile, setSelectedFile] = useState<NoteFile | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -12,9 +43,9 @@ const NotesViewer = ({ user }) => {
     }
   }, [user]);
 
-  const fetchNotes = async (department, semester) => {
+  const fetchNotes = async (department: string, semester:string) => {
     try {
-      const response = await fetch(`https://122.164.14.248:5000/api/notes?department=${department}&semester=${semester}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notes?department=${department}&semester=${semester}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -25,7 +56,7 @@ const NotesViewer = ({ user }) => {
     }
   };
 
-  const handleDownload = async (file) => {
+  const handleDownload = async (file:NoteFile) => {
     try {
       const response = await fetch(file.url);
       const blob = await response.blob();
@@ -135,7 +166,7 @@ const NotesViewer = ({ user }) => {
   );
 };
 
-const FileViewer = ({ file }) => {
+const FileViewer = ({ file}:FileViewerProps) => {
   const [loading, setLoading] = useState(true);
 
   if (!file) {
@@ -147,7 +178,7 @@ const FileViewer = ({ file }) => {
     );
   }
 
-  const getFileType = (file) => {
+  const getFileType = (file:NoteFile) => {
     if (file.type) return file.type.toLowerCase();
     const extension = file.filename.split('.').pop();
     return extension ? extension.toLowerCase() : '';
@@ -177,7 +208,10 @@ const FileViewer = ({ file }) => {
 
 
   if (fileType === 'ppt' || fileType === 'pptx') {
-    const viewerUrl = `https://docs.google.com/gview?url=${window.location.origin}/api/files/${file.department}/${file.semester}/${file.subject}/${encodeURIComponent(file.filename)}&embedded=true`;
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const fileUrl = `${baseUrl}/api/files/${file.department}/${file.semester}/${file.subject}/${encodeURIComponent(file.filename)}`;
+    const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+    
     return (
       <div className="h-full w-full relative bg-gray-50">
         {loading && (
@@ -191,9 +225,9 @@ const FileViewer = ({ file }) => {
           onLoad={() => setLoading(false)}
           onError={() => {
             setLoading(false);
-            alert('Failed to load the presentation. Please check the URL or try again later.');
+            console.error('Failed to load presentation');
           }}
-        ></iframe>
+        />
       </div>
     );
   }

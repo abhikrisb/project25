@@ -1,0 +1,1 @@
+nslookup -type=CNAME _5229e59f6496faa136f6cf17db80bb74.mrgorila.live

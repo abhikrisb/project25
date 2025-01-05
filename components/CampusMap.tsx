@@ -21,7 +21,72 @@ if (typeof window !== "undefined") {
   });
 }
 
-const locations = [
+type Coordinate = [number, number];
+type Position = [number, number];
+
+interface PathNode {
+  coordinates: number[];
+  connections: Set<string>;
+}
+
+interface Graph {
+  [key: string]: PathNode;
+}
+
+interface Location {
+  position: Position;
+  name: string;
+  category: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface Path {
+  id: number;
+  name: string;
+  coordinates: Position[];
+}
+
+
+// 2. Props Interfaces
+interface CategoryFilterProps {
+  selectedCategory: string;
+  onChange: (category: string) => void;
+}
+
+interface ControlsProps {
+  fromLocation: string;
+  toLocation: string;
+  selectedCategory: string;
+  setFromLocation: (name: string, position: [number, number]) => void;
+  setToLocation: (name: string, position: [number, number]) => void;
+  setSelectedCategory: (category: string) => void;
+}
+
+interface LocationSearchProps {
+  value: string;
+  onChange: (name: string, position: Position) => void;
+  type: string;
+}
+
+interface PathLayerProps {
+  path: {
+    id: number;
+    name: string;
+    coordinates: Position[];
+  };
+}
+
+interface MapViewProps {
+  filteredLocations: Location[];
+  paths: Path[];
+  selectedPath: Position[] | null;
+}
+
+const locations:Location[] = [
   { position: [13.031966, 80.181146], name: "Main Entrance", category: "entrance" },
   { position: [13.032050, 80.180606], name: "Side Main Entrance", category: "entrance" },
   { position: [13.031825, 80.179673], name: "Easwari Entrance", category: "entrance" },
@@ -47,7 +112,7 @@ const locations = [
   { position: [13.03376, 80.18109], name: "Boys Hostel", category: "other" },
 ];
 
-const categories = [
+const categories:Category[] = [
   { id: "all", name: "All Locations" },
   { id: "entrance", name: "Entrances" },
   { id: "academic", name: "Academic Blocks" },
@@ -57,7 +122,7 @@ const categories = [
   { id: "other", name: "Other" },
 ];
 
-const paths = [
+const paths:Path[] = [
   { id: 1, name: "Path 1", coordinates: [[13.031977, 80.181137], [13.032077, 80.181126]]},
   { id: 2, name: "Path 2", coordinates: [[13.032077, 80.181126], [13.032094, 80.181121]]},
   { id: 3, name: "Path 3", coordinates: [[13.032094, 80.181121], [13.033298, 80.181267]]},
@@ -90,14 +155,7 @@ const paths = [
   { id: 30, name: "Path 30", coordinates: [[13.033610, 80.180530], [13.03366, 80.17992]]},
 ];
 
-interface PathNode {
-  coordinates: number[];
-  connections: Set<string>;
-}
 
-interface Graph {
-  [key: string]: PathNode;
-}
 
 const coordsToKey = (coords: number[]): string => `${coords[0]},${coords[1]}`;
 
@@ -214,7 +272,7 @@ const dijkstra = (
   return path;
 };
 
-const CategoryFilter = memo(({ selectedCategory, onChange }) => (
+const CategoryFilter = memo(({ selectedCategory, onChange }:CategoryFilterProps) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
       Filter Locations
@@ -241,7 +299,7 @@ const Controls = memo(({
   setFromLocation, 
   setToLocation,
   setSelectedCategory 
-}) => (
+}:ControlsProps) => (
   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md dark:shadow-gray-900/30 mb-4">
     <div className="grid grid-cols-2 gap-4 mb-4">
       <LocationSearch
@@ -298,22 +356,22 @@ const interpolatePoints = (start: number[], end: number[], meterDistance: number
   return points;
 };
 
-const cutPaths = (paths: { id: number, name: string, coordinates: number[][] }[]): { id: number, name: string, coordinates: number[][] }[] => {
+const cutPaths = (paths: Path[]): Path[] => {
   return paths.map(path => {
-    let newCoordinates: number[][] = [];
+    let newCoordinates: Position[] = [];
     for (let i = 0; i < path.coordinates.length - 1; i++) {
       const start = path.coordinates[i];
       const end = path.coordinates[i + 1];
       const interpolated = interpolatePoints(start, end, METERS_BETWEEN_POINTS);
-      newCoordinates.push(...interpolated);
+      newCoordinates.push(...(interpolated as Position[]));
     }
     return { id: path.id, name: path.name, coordinates: newCoordinates };
   });
 };
 
-const newPaths = cutPaths(paths);
-const findPath = (fromCoords: number[], toCoords: number[]): number[][] => {
-  const graph = buildGraph(newPaths); // Use newPaths for navigation
+const newPaths: Path[] = cutPaths(paths);
+const findPath = (fromCoords: Position, toCoords: Position): Position[] => {
+  const graph = buildGraph(newPaths);
   
   const startKey = findNearestPathPoint(fromCoords, graph);
   const endKey = findNearestPathPoint(toCoords, graph);
@@ -322,37 +380,34 @@ const findPath = (fromCoords: number[], toCoords: number[]): number[][] => {
   
   if (!pathKeys) return [fromCoords, toCoords];
 
-  const pathPoints = pathKeys.map(key => keyToCoords(key));
-  let finalPath: number[][] = [fromCoords]; // Start with from coordinates
+  const pathPoints = pathKeys.map(key => keyToCoords(key) as Position);
+  let finalPath: Position[] = [fromCoords];
   
   for (let i = 0; i < pathPoints.length - 1; i++) {
     const currentPoint = pathPoints[i];
     const nextPoint = pathPoints[i + 1];
     
-    // Interpolate points between current and next point
-    const interpolated = interpolatePoints(currentPoint, nextPoint, METERS_BETWEEN_POINTS);
+    const interpolated = interpolatePoints(currentPoint, nextPoint, METERS_BETWEEN_POINTS) as Position[];
     finalPath.push(...interpolated);
     
-    // Check if we're close enough to destination
     if (haversineDistance(nextPoint, toCoords) <= LOCATION_THRESHOLD) {
-      // Create direct path to destination
-      const directPath = interpolatePoints(nextPoint, toCoords, METERS_BETWEEN_POINTS);
+      const directPath = interpolatePoints(nextPoint, toCoords, METERS_BETWEEN_POINTS) as Position[];
       finalPath.push(...directPath);
       return finalPath;
     }
   }
   
-  // If we haven't reached destination, add final direct path
   const lastPoint = finalPath[finalPath.length - 1];
   if (haversineDistance(lastPoint, toCoords) > LOCATION_THRESHOLD) {
-    const finalSegment = interpolatePoints(lastPoint, toCoords, METERS_BETWEEN_POINTS);
+    const finalSegment = interpolatePoints(lastPoint, toCoords, METERS_BETWEEN_POINTS) as Position[];
     finalPath.push(...finalSegment);
   }
   
   return finalPath;
 };
 
-const PathLayer = ({ path }) => {
+
+const PathLayer = ({ path }:PathLayerProps) => {
   const map = useMap();
   const currentZoom = map.getZoom();
   const isZoomedIn = currentZoom > 16;
@@ -373,11 +428,11 @@ const PathLayer = ({ path }) => {
   );
 };
 
-const MapView = memo(({ filteredLocations, paths, selectedPath }) => {
-  const center = [13.032221825277995, 80.17990976572038];
-  const southWest = [center[0] - 0.002, center[1] - 0.002];
-  const northEast = [center[0] + 0.002, center[1] + 0.002];
-  const bounds = [southWest, northEast];
+const MapView = memo(({ filteredLocations, paths, selectedPath }: MapViewProps) => {
+  const center: Position = [13.032221825277995, 80.17990976572038];
+  const southWest: Position = [center[0] - 0.002, center[1] - 0.002];
+  const northEast: Position = [center[0] + 0.002, center[1] + 0.002];
+  const bounds: [Position, Position] = [southWest, northEast];
 
   return (
     <div className="h-[600px] w-full">
@@ -422,10 +477,10 @@ const MapView = memo(({ filteredLocations, paths, selectedPath }) => {
     </div>
   );
 });
-const LocationSearch = memo(({ value, onChange, type }) => {
+const LocationSearch = memo(({ value, onChange, type }: LocationSearchProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleSelect = (location) => {
+  const handleSelect = (location: Location) => {
     onChange(location.name, location.position);
     setIsExpanded(false);
   };
@@ -461,20 +516,20 @@ const LocationSearch = memo(({ value, onChange, type }) => {
 });
 // Main Component
 const CampusMap = () => {
-  const [fromLocation, setFromLocation] = useState("");
-  const [toLocation, setToLocation] = useState("");
-  const [fromCoordinates, setFromCoordinates] = useState<number[]|null>(null);
-  const [toCoordinates, setToCoordinates] = useState<number[]|null>(null);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [filteredLocations, setFilteredLocations] = useState(locations);
-  const [selectedPath, setSelectedPath] = useState<number[][]|null>(null);
+  const [fromLocation, setFromLocation] = useState<string>("");
+  const [toLocation, setToLocation] = useState<string>("");
+  const [fromCoordinates, setFromCoordinates] = useState<Position | null>(null);
+  const [toCoordinates, setToCoordinates] = useState<Position | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [filteredLocations, setFilteredLocations] = useState<Location[]>(locations);
+  const [selectedPath, setSelectedPath] = useState<Position[] | null>(null);
 
-  const handleFromLocationChange = (name: string, position: number[]) => {
+  const handleFromLocationChange = (name: string, position: Position) => {
     setFromLocation(name);
     setFromCoordinates(position);
   };
 
-  const handleToLocationChange = (name: string, position: number[]) => {
+  const handleToLocationChange = (name: string, position: Position) => {
     setToLocation(name);
     setToCoordinates(position);
   };

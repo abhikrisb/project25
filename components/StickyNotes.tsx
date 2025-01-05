@@ -17,8 +17,12 @@ const colorClasses: Record<string, string> = {
     pink: 'bg-pink-100 dark:bg-pink-900/40 text-pink-900 dark:text-pink-100',
     blue: 'bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100'
 };
+
+interface StickyNotesProps {
+  userEmail: string | undefined;
+}
   
-export default function StickyNotes({ userEmail }: { userEmail: string }) {
+export default function StickyNotes({ userEmail }: StickyNotesProps) {
     const [notes, setNotes] = useState<StickyNote[]>([]);
     const [newNote, setNewNote] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -32,7 +36,7 @@ export default function StickyNotes({ userEmail }: { userEmail: string }) {
 
   const fetchNotes = async () => {
     try {
-      const response = await fetch(`https://122.164.14.248:5000/api/sticky-notes/${userEmail}`);
+      const response = await fetch(`https://www.abhisheks.live:5000/api/sticky-notes/${userEmail}`);
       if (!response.ok) throw new Error('Failed to fetch notes');
       const data = await response.json();
       setNotes(data);
@@ -44,7 +48,7 @@ export default function StickyNotes({ userEmail }: { userEmail: string }) {
 
   const deleteNote = async (id: number) => {
     try {
-      const response = await fetch(`https://122.164.14.248:5000/api/sticky-notes/${id}`, {
+      const response = await fetch(`https://www.abhisheks.live:5000/api/sticky-notes/${id}`, {
         method: 'DELETE',
       });
       
@@ -62,7 +66,7 @@ export default function StickyNotes({ userEmail }: { userEmail: string }) {
     setError(null);
 
     try {
-      const response = await fetch('https://122.164.14.248:5000/api/sticky-notes', {
+      const response = await fetch('https://www.abhisheks.live:5000/api/sticky-notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -89,7 +93,7 @@ export default function StickyNotes({ userEmail }: { userEmail: string }) {
 
   const updateNotePosition = async (id: number, x: number, y: number) => {
     try {
-      await fetch(`https://122.164.14.248:5000/api/sticky-notes/${id}`, {
+      await fetch(`https://www.abhisheks.live:5000/api/sticky-notes/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ position_x: x, position_y: y }),

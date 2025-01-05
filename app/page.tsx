@@ -14,7 +14,7 @@ export default function Login() {
     e.preventDefault();
     setError("");
     try {
-      const response = await fetch(`https://122.164.14.248:5000/api/users`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

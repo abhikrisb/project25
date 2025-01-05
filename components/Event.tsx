@@ -11,12 +11,19 @@ if (typeof window !== "undefined") {
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   });
 }
+interface Coordinates {
+  x: number;
+  y: number;
+}
+
 interface Event {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  event_date: string;
+  date: string;
+  time: string;
   location: string;
+  event_date: string;
   event_type: 'CLUB' | 'CAMPUS';
   club_name?: string;
   registration_link?: string;
@@ -24,10 +31,16 @@ interface Event {
   max_participants?: number;
   current_participants?: number;
   organizer: string;
-  coordinates: [number, number];
+  coordinates: Coordinates;
 }
 
-const EventDetails = ({ event, onBack }) => {
+interface EventDetailsProps {
+  event: Event;
+  onBack: () => void;
+}
+
+
+const EventDetails = ({ event, onBack }:EventDetailsProps) => {
   const position: [number, number] = [event.coordinates['x'], event.coordinates['y']];
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg transition-colors">
@@ -186,8 +199,8 @@ const EventsList = () => {
     setLoading(true);
     try {
       const url = type === 'ALL' 
-        ? 'https://122.164.14.248:5000/api/events'
-        : `https://122.164.14.248:5000/api/events?type=${type}`;
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/events`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/events?type=${type}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch events');
       const data = await response.json();
@@ -266,4 +279,5 @@ const EventsList = () => {
   );
 };
 
+export type { Event };
 export { EventsList };

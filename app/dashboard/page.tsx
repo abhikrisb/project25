@@ -23,7 +23,52 @@ import StickyNotes from '@/components/StickyNotes';
 import ThemeToggle from '@/components/ThemeToggle'
 const CampusMap = dynamic(() => import('@/components/CampusMap'), { ssr: false });
 
-const DashboardItem = ({ icon: Icon, title, content }) => (
+interface User {
+  name: string;
+  email: string;
+  class: string;
+  department: string;
+  reg_no: string;
+  semester: string;
+}
+
+interface Period {
+  period: number;
+  subject: string;
+  time: string;
+  room: string;
+}
+
+
+interface DashboardContent {
+  title: string;
+  content: React.ReactNode;
+  icon: React.ElementType;
+}
+
+interface ContentTypes {
+  dashboard: DashboardContent[];
+  map: DashboardContent[];
+  notes: React.ReactNode;
+  events: DashboardContent[];
+  bus: DashboardContent[];
+  [key: string]: DashboardContent[] | React.ReactNode;
+}
+
+interface DashboardItemProps {
+  icon: React.ElementType;
+  title: string;
+  content: React.ReactNode;
+}
+
+interface SidebarItemProps {
+  icon: React.ElementType;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+const DashboardItem = ({ icon: Icon, title, content }:DashboardItemProps) => (
   <Card className="mb-6 dark:bg-gray-800">
     <CardContent className="pt-6">
       <div className="flex items-center gap-2 mb-4">
@@ -36,7 +81,7 @@ const DashboardItem = ({ icon: Icon, title, content }) => (
 );
 
 
-const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
+const SidebarItem = ({ icon: Icon, label, active, onClick }:SidebarItemProps) => (
   <li
     onClick={onClick}
     className={`
@@ -54,7 +99,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
 );
 
 
-const getGreeting = (currentTime) => {
+const getGreeting = (currentTime:Date): string => {
   const hours = currentTime.getHours();
   if (hours >= 0 && hours < 12) {
     return "Good morning";
@@ -66,13 +111,18 @@ const getGreeting = (currentTime) => {
 };
 
 export default function Dashboard() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user } = useAuth() as { 
+    isAuthenticated: boolean; 
+    user: User | null 
+  };
+  
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [currentPeriod, setCurrentPeriod] = useState(null);
-  const [nextPeriod, setNextPeriod] = useState(null);
+  const [currentPeriod, setCurrentPeriod] = useState<Period | null>(null);
+  const [nextPeriod, setNextPeriod] = useState<Period | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/');
@@ -97,8 +147,8 @@ export default function Dashboard() {
     { id: "events", label: "Events", icon: FaRegCalendarAlt },
     { id: "bus", label: "Bus Timing", icon: FaBus },
   ];
-
-  const renderContent = () => {
+  
+  const renderContent = ():React.ReactNode => {
     if (activeTab === "timetable") {
       return (
         <Timetable
@@ -111,8 +161,8 @@ export default function Dashboard() {
         />
       );
     }
-
-    const contents = {
+    
+    const contents: ContentTypes = {
       dashboard: [{
         title: "Welcome to the Acadassist",
         content: (

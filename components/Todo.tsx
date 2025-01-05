@@ -3,18 +3,27 @@ import { useAuth } from '@/context/AuthContext';
 import { FiPlus, FiCheck, FiCircle, FiClock, FiCalendar, FiAlertCircle } from 'react-icons/fi';
 import { format ,isPast} from 'date-fns';
 
+interface Todo {
+  id: number;
+  user_email: string;
+  title: string;
+  is_completed: boolean;
+  created_at: string;
+  due_date: string;
+  reminder_sent: boolean;
+}
+
 export default function TodoSection() {
   const { user } = useAuth();
-  const [todos, setTodos] = useState([]);
+  const [todos, setTodos] = useState<Todo[]>([])
   const [newTodo, setNewTodo] = useState({
     title: '',
     due_date: ''
   });
-  const API_URL = 'https://122.164.14.248:5000';
 
   const fetchTodos = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/todos/${user?.email}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/todos/${user?.email}`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -49,7 +58,7 @@ export default function TodoSection() {
     if (!newTodo.title.trim()) return;
 
     try {
-      await fetch(`${API_URL}/api/todos`, {
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/todos`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -68,7 +77,7 @@ export default function TodoSection() {
 
   const toggleTodo = async (id) => {
     try {
-      await fetch(`${API_URL}/api/todos/${id}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/todos/${id}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
@@ -130,11 +139,12 @@ export default function TodoSection() {
       </form>
   
       <div className="space-y-2">
-        {sortTodos(todos).map((todo) => (
+      {sortTodos(todos).map((todo) => (
           <div
             key={todo.id}
             className={`transform transition-all duration-300 ease-in-out 
               ${todo.is_completed ? 'opacity-60' : 'opacity-100'}
+              ${todo.reminder_sent ? 'border-l-4 border-blue-500' : ''}
               group flex items-center justify-between
               bg-gray-50 dark:bg-gray-800 p-4 rounded-lg
               shadow-sm hover:shadow-md cursor-pointer`}
@@ -157,6 +167,11 @@ export default function TodoSection() {
               `}>
                 {todo.title}
               </span>
+              {todo.reminder_sent && (
+                <span className="text-xs text-blue-500">
+                  Reminder sent
+                </span>
+              )}              
             </div>
             {todo.due_date && (
               <div className={`flex items-center space-x-2 text-sm 

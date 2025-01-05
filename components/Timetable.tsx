@@ -1,23 +1,44 @@
 import React, { useEffect, useState } from 'react';
 
-const Timetable = ({ user, currentTime, currentPeriod, nextPeriod, setCurrentPeriod, setNextPeriod }) => {
-  const [timetable, setTimetable] = useState([]);
-  const [weeklyTimetable, setWeeklyTimetable] = useState({});
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  const [activeDay, setActiveDay] = useState(() => 
-    new Date().toLocaleString('en-us', { weekday: 'long' })
-  );
+interface User {
+  class: string;
+}
 
+interface Period {
+  period: number;
+  subject: string;
+  time: string;
+  room: string;
+}
+
+interface WeeklyTimetable {
+  [key: string]: Period[];
+}
+
+interface TimetableProps {
+  user: User | null;
+  currentTime: Date;
+  currentPeriod: Period | null;
+  nextPeriod: Period | null;
+  setCurrentPeriod: (period: Period | null) => void;
+  setNextPeriod: (period: Period | null) => void;
+}
+
+
+const Timetable = ({ user, currentTime, currentPeriod, nextPeriod, setCurrentPeriod, setNextPeriod }:TimetableProps) => {
+  const [timetable, setTimetable] = useState<Period[]>([]);
+  const [weeklyTimetable, setWeeklyTimetable] = useState<WeeklyTimetable>({});
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   useEffect(() => {
     if (user?.class) {
       fetchTimetable(user.class);
     }
   }, [user?.class]);
 
-  const fetchTimetable = async (className) => {
+  const fetchTimetable = async (className:string): Promise<void> => {
     try {
       const response = await fetch(
-        `https://122.164.14.248:5000/api/timetable?class=${className}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/timetable?class=${className}`,
         {
           method: 'GET',
           headers: {
@@ -43,12 +64,12 @@ const Timetable = ({ user, currentTime, currentPeriod, nextPeriod, setCurrentPer
     }
   };
 
-  const calculateCurrentAndNextPeriod = (timetable) => {
+  const calculateCurrentAndNextPeriod = (timetable:Period[]) => {
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
 
-    let current = null;
-    let next = null;
+    let current: Period | null = null;
+    let next: Period | null = null;
 
     for (let i = 0; i < timetable.length; i++) {
       const period = timetable[i];
@@ -68,13 +89,13 @@ const Timetable = ({ user, currentTime, currentPeriod, nextPeriod, setCurrentPer
     setNextPeriod(next);
   };
 
-  const getPeriodsArray = () => {
+  const getPeriodsArray = (): number[] => {
     const maxPeriods = 10;
     return Array.from({ length: maxPeriods }, (_, i) => i + 1);
   };
 
-  const getPeriodTimes = () => {
-    const times = {};
+  const getPeriodTimes = (): { [key: number]: string } => {
+    const times: { [key: number]: string } = {};
     days.forEach(day => {
       if (weeklyTimetable[day]) {
         weeklyTimetable[day].forEach(period => {
@@ -85,7 +106,7 @@ const Timetable = ({ user, currentTime, currentPeriod, nextPeriod, setCurrentPer
     return times;
   };
 
-  const parseTime = (time) => {
+  const parseTime = (time: string): number => {
     try {
       const [hours, minutes] = time.split(':').map(Number);
       if (isNaN(hours) || isNaN(minutes)) {
