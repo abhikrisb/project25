@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, memo,useRef } from "react";
+import React, { useEffect, useState, memo } from "react";
 import { useMap } from 'react-leaflet';
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
@@ -21,7 +21,6 @@ if (typeof window !== "undefined") {
   });
 }
 
-type Coordinate = [number, number];
 type Position = [number, number];
 
 interface PathNode {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { FiPlus, FiCheck, FiCircle, FiClock, FiCalendar, FiAlertCircle } from 'react-icons/fi';
-import { format ,isPast} from 'date-fns';
+import { format, isPast } from 'date-fns';
 
 interface Todo {
   id: number;
@@ -15,7 +15,7 @@ interface Todo {
 
 export default function TodoSection() {
   const { user } = useAuth();
-  const [todos, setTodos] = useState<Todo[]>([])
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState({
     title: '',
     due_date: ''
@@ -34,13 +34,13 @@ export default function TodoSection() {
     }
   };
 
-  const sortTodos = (todos) => {
+  const sortTodos = (todos: Todo[]): Todo[] => {
     return [...todos].sort((a, b) => {
       if (a.is_completed !== b.is_completed) {
         return a.is_completed ? 1 : -1;
       }
       if (a.due_date && b.due_date) {
-        return new Date(a.due_date) - new Date(b.due_date);
+        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
       }
       if (!a.due_date) return 1;
       if (!b.due_date) return -1;
@@ -48,12 +48,12 @@ export default function TodoSection() {
     });
   };
 
-  const isPastDue = (dueDate: string) => {
+  const isPastDue = (dueDate: string): boolean => {
     if (!dueDate) return false;
     return isPast(new Date(dueDate));
   };
 
-  const addTodo = async (e) => {
+  const addTodo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTodo.title.trim()) return;
 
@@ -75,7 +75,7 @@ export default function TodoSection() {
     }
   };
 
-  const toggleTodo = async (id) => {
+  const toggleTodo = async (id: number) => {
     try {
       await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/todos/${id}`, {
         method: 'PATCH',

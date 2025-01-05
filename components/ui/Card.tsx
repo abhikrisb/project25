@@ -1,6 +1,11 @@
-import React from 'react';
+import React,{ReactNode} from 'react';
 
-const Card = ({ children, className }) => (
+interface CardProps {
+  children: ReactNode;
+  className?: string;
+}
+
+const Card = ({ children, className }:CardProps) => (
   <div className={`card ${className}`}>
     {children}
   </div>
